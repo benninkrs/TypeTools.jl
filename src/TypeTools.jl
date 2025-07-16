@@ -2,7 +2,7 @@
 Functions to facilitate working with types.
 """
 module TypeTools
-export asdeclared
+export basetype
 export parse_typedecl, parse_typesig, extract_typename, map_symbols
 # export parameters, is_unionall_typevar, TypeMap
 # export fields, properties, Property
@@ -21,7 +21,7 @@ using MacroTools
 bound by a UnionAll in `typ`.
 """
 function is_unionall_typevar(tv::TypeVar, typ::Type)
-	if isa(typ, UnionAll)
+	while isa(typ, UnionAll)
 		if tv == typ.var
 			return true
 		end
@@ -35,14 +35,14 @@ is_unionall_typevar(::Any, ::Type) = false
 
 """
 ```
-asdeclared(t::DataType)
+basetype(t::Type)
 ```
-Returns a type as it was declared (e.g. with its typevars)
+Returns a type withouts its parameters specified.
 """
 # TODO: This doesn't give the obivous result for NTuple -- it returns Tuple.
 # Desirable or not?
-asdeclared(dt::DataType) = dt.name.wrapper
-asdeclared(ut::UnionAll) = asdeclared(ut.body)
+basetype(dt::DataType) = dt.name.wrapper
+basetype(ut::UnionAll) = basetype(ut.body)
 
 # Is this really needed?
 # """
@@ -277,7 +277,7 @@ The following stuff facilitates the propagation of type parameters to fields and
 # 			push!(params, p)
 # 		end
 # 	end
-# 	TypeMap(asdeclared(type1), asdeclared(type2), params)
+# 	TypeMap(basetype(type1), basetype(type2), params)
 # end
 
 # """
@@ -322,7 +322,7 @@ The following stuff facilitates the propagation of type parameters to fields and
 # TypeMap(t::Type) creates the identity TypeMap for type T.
 # """
 # function TypeMap(t::Type)
-# 	t_ad = asdeclared(t)
+# 	t_ad = basetype(t)
 # 	nparams = length(parameters(t_ad));
 # 	params = [Param(i) for i = 1:nparams]
 # 	TypeMap(t_ad, t_ad, params)
@@ -335,7 +335,7 @@ The following stuff facilitates the propagation of type parameters to fields and
 # """
 # # TODO: Should this be a separate function?
 # function (tmap::TypeMap)(typ::Type)
-# 	@assert asdeclared(typ) == tmap.type_in "Expected input type $(tmap.type_in), got $typ"
+# 	@assert basetype(typ) == tmap.type_in "Expected input type $(tmap.type_in), got $typ"
 #
 # 	if length(tmap.params) == 0
 # 		tmap.type_out
